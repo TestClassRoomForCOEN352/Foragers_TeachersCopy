@@ -1,0 +1,78 @@
+# .github/workflows/tournament.yml
+# Runs in each student's forked repo after the assignment deadline.
+# Checks out the teacher's private engine, injects the student's players,
+# compiles everything together and runs the full tournament.
+
+name: Tournament Autograder
+
+on:
+  workflow_dispatch:       # teacher triggers manually at deadline
+  push:                    # or runs on every push during development
+    branches: [ main ]
+
+jobs:
+  tournament:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15    # safety cut-off — 120 games should finish well under this
+
+    steps:
+
+      # 1. Check out the student's repo
+      - name: Checkout student repo
+        uses: actions/checkout@v4
+        with:
+          path: student
+
+      # 2. Check out the teacher's private engine repo using a PAT stored
+      #    as a repository secret. Students cannot see this secret or its contents.
+      - name: Checkout teacher engine (private)
+        uses: actions/checkout@v4
+        with:
+          repository: your-org/teacher-engine   # ← replace with your repo
+          token: ${{ secrets.ENGINE_ACCESS_TOKEN }}
+          path: engine
+
+      # 3. Set up Java
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 4. Copy the student's two player files into the engine source tree.
+      #    Everything else (bosses, engine, map) comes from the teacher repo.
+      - name: Inject student players into engine
+        run: |
+          cp student/src/main/java/org/concordia/Player1.java \
+             engine/src/main/java/org/concordia/Player1.java
+          cp student/src/main/java/org/concordia/Player2.java \
+             engine/src/main/java/org/concordia/Player2.java
+
+      # 5. Compile the entire engine + student players in one javac call.
+      #    All .java files are compiled together so the student's classes
+      #    can reference engine types (Tile, GameState, etc.) and vice versa.
+      - name: Compile
+        working-directory: engine
+        run: |
+          mkdir -p out
+          find src -name "*.java" | xargs javac -d out -cp src/main/java
+
+      # 6. Run the tournament. TournamentRunner prints structured results
+      #    that the Actions log captures. Exit code 0 always — we never
+      #    fail the workflow on game loss, only on compilation errors.
+      - name: Run tournament
+        working-directory: engine
+        run: |
+          java -cp out:src/main/resources org.concordia.runner.TournamentRunner \
+            "${{ github.repository }}" \
+            "${{ github.actor }}"
+
+      # 7. Upload the full match log as a downloadable artifact so the
+      #    teacher can review every game in detail.
+      - name: Upload match log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-log-${{ github.actor }}
+          path: engine/match_log.txt
+          retention-days: 30
