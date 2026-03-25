@@ -174,4 +174,8 @@ public class Player1 {
         this.y     = state.p1_y;
         this.score = state.p1_score;
     }
+
+    public int getTeleport() {
+    return 0;
+    }
 }

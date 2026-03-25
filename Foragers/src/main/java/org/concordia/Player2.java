@@ -150,4 +150,8 @@ public class Player2 {
         this.y     = state.p2_y;
         this.score = state.p2_score;
     }
+
+    public int getTeleport() {
+    return 0;
+    }
 }

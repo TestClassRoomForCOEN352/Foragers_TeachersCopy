@@ -7,7 +7,8 @@ import static org.concordia.MapLoader.MAP_WIDTH;
 public class GameEngine {
     public int tickLength;
     public GameState state;
-    private int teleport;
+    private int p1TeleportFlag = 0;
+    private int p2TeleportFlag = 0;
 
     public GameEngine(Tile[][] tiles, Player1 p1, Player2 p2, int rounds, int tickLength) {
         this.tickLength = tickLength;
@@ -79,7 +80,7 @@ public class GameEngine {
         }
         Tile current = state.tiles[state.p1_y][state.p1_x];
         if (!isNeighbour(current, next)) {
-            this.teleport = 1;
+            p1TeleportFlag = 1;
             System.out.println("Player 1 moved too fast. Submission flagged for teleporting.");
             return;
         }
@@ -94,7 +95,7 @@ public class GameEngine {
         }
         Tile current = state.tiles[state.p2_y][state.p2_x];
         if (!isNeighbour(current, next)) {
-            this.teleport = 1;
+            p2TeleportFlag = 1;
             System.out.println("Player 2 moved too fast. Submission flagged for teleporting.");
             return;
         }
@@ -128,7 +129,6 @@ public class GameEngine {
         return (state.p1.score > state.p2.score) ? 1 : 2;
     }
 
-    public int getTeleport(){
-        return this.teleport;
-    }
+    public int getP1TeleportFlag() { return p1TeleportFlag; }
+    public int getP2TeleportFlag() { return p2TeleportFlag; }
 }
