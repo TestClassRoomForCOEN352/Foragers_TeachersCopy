@@ -138,7 +138,7 @@ public class TournamentRunner {
 
             return new MatchResult(
                 p1.score, p2.score,
-                p1.getTeleport(), p2.getTeleport()
+                engine.getP1TeleportFlag(), engine.getP2TeleportFlag()
             );
 
         } catch (Exception e) {
