@@ -31,10 +31,14 @@ public class GameEngine {
                 } else if (tile.treasurePresent) {
                     String colour = (tile.treasure.value == 10) ? AnsiColor.YELLOW : AnsiColor.BRIGHT_GREEN;
                     sb.append(colour).append(tile.treasure.texture).append(AnsiColor.RESET);
-                } else if (tile.collision) {
+                } else if (tile.texture == '@') {
+                    sb.append(AnsiColor.GREEN).append(tile.texture).append(AnsiColor.RESET);
+                } else if (tile.texture == '~') {
+                    sb.append(AnsiColor.CYAN).append(tile.texture).append(AnsiColor.RESET);
+                }else if (tile.texture == '!') {
+                    sb.append(AnsiColor.PURPLE).append(tile.texture).append(AnsiColor.RESET);
+                }else {
                     sb.append(AnsiColor.WHITE).append(tile.texture).append(AnsiColor.RESET);
-                } else {
-                    sb.append(AnsiColor.BLUE).append(tile.texture).append(AnsiColor.RESET);
                 }
             }
             sb.append('\n');

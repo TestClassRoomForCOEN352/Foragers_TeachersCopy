@@ -7,7 +7,7 @@ public class Main {
         MapLoader loader = new MapLoader();
 
         //STUDENT-MODIFIABLE PARAMETER---------------------
-        Tile[][] tiles = loader.load("Grotto.txt"); //Choose the map to be loaded
+        Tile[][] tiles = loader.load(); //Choose the map to be loaded
         //-------------------------------------------------
 
         PlayerLoader ploader = new PlayerLoader();

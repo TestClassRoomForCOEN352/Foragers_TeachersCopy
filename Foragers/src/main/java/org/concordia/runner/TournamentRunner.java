@@ -7,18 +7,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
- * TournamentRunner — lives in the teacher's private repo.
- *
- * Runs all 6 match series (student P1 vs each boss, student P2 vs each boss),
- * up to 20 attempts per series stopping at the first win.
- * Prints a structured summary to stdout (captured by Actions log)
- * and writes a detailed match_log.txt for the artifact upload.
- *
  * Win conditions:
  *   Easy:   half win = 25 pts,  full win = 25 pts AND beat the boss
  *   Medium: half win = 75 pts,  full win = 75 pts AND beat the boss
  *   Hard:   half win = 150 pts, full win = 150 pts AND beat the boss
  */
+
 public class TournamentRunner {
 
     // Points threshold for a half-win at each difficulty
@@ -27,6 +21,10 @@ public class TournamentRunner {
     private static final int MAX_ATTEMPTS = 20;
 
     public static void main(String[] args) throws IOException {
+        System.out.println("=== TournamentRunner started ===");
+    System.out.println("Args: " + args.length);
+    for (String a : args) System.out.println("  arg: " + a);
+    System.out.flush();
         String repoName   = args.length > 0 ? args[0] : "unknown/repo";
         String studentId  = args.length > 1 ? args[1] : "unknown";
 
@@ -37,10 +35,23 @@ public class TournamentRunner {
         int totalHalfWins = 0;
         int totalFullWins = 0;
 
+        System.out.println("Starting tournament loop...");
+System.out.flush();
         // Six series: for each difficulty, P1 vs boss then P2 vs boss
         for (int d = 0; d < 3; d++) {
-            totalHalfWins += runSeries("Player1", d, true,  log);
-            totalHalfWins += runSeries("Player2", d, false, log);
+            int FinalResult = runSeries("Player1", d, true,  log);
+            if(FinalResult == 1)
+                totalHalfWins++;
+            else if(FinalResult == 2)
+                totalHalfWins++;
+                totalFullWins++;
+
+            FinalResult = runSeries("Player2", d, false,  log);
+            if(FinalResult == 1)
+                totalHalfWins++;
+            else if(FinalResult == 2)
+                totalHalfWins++;
+                totalFullWins++;
         }
 
         printSummary(totalHalfWins, totalFullWins, log);
@@ -49,17 +60,10 @@ public class TournamentRunner {
         log.close();
     }
 
-    /**
-     * Runs up to MAX_ATTEMPTS games for one (player, difficulty) pairing.
-     * Stops at the first win.
-     *
-     * @param playerLabel "Player1" or "Player2" — for display only
-     * @param difficultyIdx  0=easy, 1=medium, 2=hard
-     * @param studentIsP1    true if the student's class plays as P1 this series
-     * @return 1 if a half-win was recorded, 0 otherwise
-     */
     private static int runSeries(String playerLabel, int difficultyIdx,
                                   boolean studentIsP1, PrintWriter log) {
+        System.out.println("runSeries called: " + playerLabel + " difficulty " + difficultyIdx);
+    System.out.flush();
         int threshold = THRESHOLDS[difficultyIdx];
         String diff   = DIFFICULTY[difficultyIdx];
 
@@ -79,7 +83,7 @@ public class TournamentRunner {
             int teleportFlag = studentIsP1 ? result.p1Teleport : result.p2Teleport;
             if (teleportFlag == 1 && !cheated) {
                 cheated = true;
-                warn(String.format("  ⚠  CHEAT DETECTED — %s teleported in attempt %d. " +
+                warn(String.format("CHEAT DETECTED — %s teleported in attempt %d. " +
                                    "Result counted but flagged.", playerLabel, attempt), log);
             }
 
@@ -89,10 +93,12 @@ public class TournamentRunner {
             halfWin = studentScore >= threshold;
             fullWin = halfWin && studentScore > bossScore;
 
-            if (halfWin) {
-                String winType = fullWin ? "FULL WIN" : "HALF WIN";
-                pass(attemptLine + " | " + winType, log);
-                break;
+            if (fullWin) {
+                pass(attemptLine + " | FULL WIN", log);
+            break;
+            } else if (halfWin) {
+                pass(attemptLine + " | HALF WIN — continuing for full win...", log);
+            // no break — keep trying
             } else {
                 info(attemptLine + " | no win", log);
             }
@@ -100,20 +106,19 @@ public class TournamentRunner {
 
         if (!halfWin) {
             fail(String.format("  %s could not defeat the %s boss in %d attempts.",
-                    playerLabel, diff, MAX_ATTEMPTS), log);
+            playerLabel, diff, MAX_ATTEMPTS), log);
+        } else if (!fullWin) {
+            info(String.format("  %s achieved a HALF WIN against the %s boss but not a full win.",
+            playerLabel, diff), log);
         }
-
+        if(fullWin) return 2;
         return halfWin ? 1 : 0;
     }
 
-    /**
-     * Runs a single game and returns scores + cheat flags.
-     * Swaps which physical class plays P1/P2 based on studentIsP1.
-     */
     private static MatchResult runOneGame(int difficultyIdx, boolean studentIsP1) {
         try {
             MapLoader loader = new MapLoader();
-            Tile[][] tiles   = loader.load("Grotto.txt");
+            Tile[][] tiles   = loader.load();
 
             // Instantiate the correct boss for this difficulty
             Player1 p1;
@@ -141,17 +146,13 @@ public class TournamentRunner {
                 engine.getP1TeleportFlag(), engine.getP2TeleportFlag()
             );
 
-        } catch (Exception e) {
+        }catch (Exception e) {
             // If the student's code throws, count it as a 0-score attempt
             System.err.println("Game threw an exception: " + e.getMessage());
+            e.printStackTrace(System.err);
             return new MatchResult(0, 0, 0, 0);
         }
     }
-
-    // -----------------------------------------------------------------------
-    // Boss factory methods — swap in the appropriate difficulty class.
-    // These classes live in your private repo and are never exposed.
-    // -----------------------------------------------------------------------
 
     private static Player1 bossPlayer1(int difficultyIdx, int x, int y) {
         return switch (difficultyIdx) {
@@ -170,10 +171,6 @@ public class TournamentRunner {
             default -> throw new IllegalArgumentException("Unknown difficulty: " + difficultyIdx);
         };
     }
-
-    // -----------------------------------------------------------------------
-    // Output helpers — formatted for GitHub Actions log readability
-    // -----------------------------------------------------------------------
 
     private static void printHeader(String repo, String student, PrintWriter log) {
         String line = "=".repeat(65);
@@ -224,8 +221,5 @@ public class TournamentRunner {
         log.println(msg);
     }
 
-    // -----------------------------------------------------------------------
-    // Simple result container
-    // -----------------------------------------------------------------------
     private record MatchResult(int p1Score, int p2Score, int p1Teleport, int p2Teleport) {}
 }
