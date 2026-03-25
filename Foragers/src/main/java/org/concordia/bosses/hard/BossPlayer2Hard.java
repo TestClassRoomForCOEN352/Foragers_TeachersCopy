@@ -1,29 +1,17 @@
-package org.concordia.bosses.easy;
+package org.concordia.bosses.hard;
 
 import org.concordia.*;
-import java.util.*;
 
-/**
- * BossPlayer2Easy — teacher's easy difficulty P2.
- * Moves randomly to any non-collision neighbour.
- * Students should be able to beat this reliably.
- */
-public class BossPlayer2Easy extends Player2 {
+public class BossPlayer2Hard extends Player2 {
 
-    private final Random rng = new Random();
-
-    public BossPlayer2Easy(int x, int y) {
+    public BossPlayer2Hard(int x, int y) {
         super(x, y);
     }
 
     @Override
     public Tile moveDecision(GameState state) {
-        Tile current = state.tiles[y][x];
-        List<Tile> options = new ArrayList<>();
-        for (Tile n : current.neighbours)
-            if (n != null && !n.collision) options.add(n);
-        if (options.isEmpty()) return current;
-        return options.get(rng.nextInt(options.size()));
+        // Reuses the same logic as BossPlayer1Hard but from P2's perspective
+        return BossPlayer1Hard.computeMove(state, x, y, state.p1_x, state.p1_y);
     }
 
     @Override

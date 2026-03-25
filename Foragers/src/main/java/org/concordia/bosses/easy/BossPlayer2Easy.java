@@ -3,11 +3,6 @@ package org.concordia.bosses.easy;
 import org.concordia.*;
 import java.util.*;
 
-/**
- * BossPlayer2Easy — teacher's easy difficulty P2.
- * Moves randomly to any non-collision neighbour.
- * Students should be able to beat this reliably.
- */
 public class BossPlayer2Easy extends Player2 {
 
     private final Random rng = new Random();
