@@ -1,1 +1,6 @@
+Den.txt
 Grotto.txt
+Reactor.txt
+Regicide.txt
+Revelries.txt
+Sunk.txt
